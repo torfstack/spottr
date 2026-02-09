@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Spottr",
+  "version": "1.0.0",
+  "description": "Spotlight-like search for your browser: search bookmarks, history, and navigate with your keyboard.",
+  "permissions": [
+    "bookmarks",
+    "history"
+  ],
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "icons": {
+    "128": "icons/icon128.png"
+  }
+}

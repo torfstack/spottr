@@ -1,0 +1,16 @@
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# Build / Package
+*.zip
+*.crx
+*.pem
+web-ext-artifacts/
