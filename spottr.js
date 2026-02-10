@@ -5,6 +5,33 @@ let results = [];
 let selectedIndex = -1;
 let debounceTimer = null;
 
+// --- Quick Actions ---
+const QUICK_ACTIONS = [
+  {
+    title: "> settings",
+    keywords: ["settings", "options", "preferences"],
+    action: () => {
+      chrome.tabs.create({ url: "chrome://settings" });
+    },
+    source: "QUICK ACTIONS",
+  },
+  {
+    title: "> clear",
+    keywords: ["clear", "cache", "history", "delete"],
+    action: () => {
+      chrome.tabs.create({ url: "chrome://settings/clearBrowserData" });
+    },
+    source: "QUICK ACTIONS",
+  },
+];
+
+function matchQuickActions(query) {
+  const q = query.toLowerCase();
+  return QUICK_ACTIONS.filter((a) =>
+    a.keywords.some((k) => k.includes(q))
+  );
+}
+
 // --- Theme Switcher ---
 const THEMES = ["neon-dusk", "light", "midnight"];
 const DEFAULT_THEME = "neon-dusk";
@@ -51,7 +78,9 @@ document.addEventListener("keydown", (e) => {
   } else if (e.key === "Enter") {
     e.preventDefault();
     if (selectedIndex >= 0 && selectedIndex < results.length) {
-      navigate(results[selectedIndex].url);
+      const item = results[selectedIndex];
+      if (item.action) { item.action(); return; }
+      navigate(item.url);
     } else {
       navigate(input.value.trim());
     }
@@ -90,17 +119,19 @@ async function search(query) {
     searchHistory(query),
   ]);
 
+  const quickActions = matchQuickActions(query);
+
   const seen = new Set();
-  results = [];
+  const browseResults = [];
 
   for (const item of [...bookmarks, ...history]) {
     if (!seen.has(item.url)) {
       seen.add(item.url);
-      results.push(item);
+      browseResults.push(item);
     }
   }
 
-  results = results.slice(0, 20);
+  results = [...quickActions, ...browseResults].slice(0, 20);
   selectedIndex = results.length > 0 ? 0 : -1;
   render();
 }
@@ -136,13 +167,25 @@ function render() {
     if (i === selectedIndex) li.classList.add("selected");
 
     const query = input.value.trim();
-    li.innerHTML = `
-      <span class="title">${highlightMatch(item.title, query)}</span>
-      <span class="url">${highlightMatch(item.url, query)}</span>
-      <span class="source">${item.source}</span>
-    `;
+    if (item.action) {
+      li.classList.add("quick-action");
+      li.innerHTML = `
+        <span class="title">${highlightMatch(item.title, query)}</span>
+        <span class="source">${item.source}</span>
+      `;
+    } else {
+      li.innerHTML = `
+        <img class="favicon" src="chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(item.url)}&size=16" alt="">
+        <span class="title">${highlightMatch(item.title, query)}</span>
+        <span class="url">${highlightMatch(item.url, query)}</span>
+        <span class="source">${item.source}</span>
+      `;
+    }
 
-    li.addEventListener("click", () => navigate(item.url));
+    li.addEventListener("click", () => {
+      if (item.action) { item.action(); return; }
+      navigate(item.url);
+    });
     li.addEventListener("mouseenter", () => {
       selectedIndex = i;
       resultsList.querySelector(".selected")?.classList.remove("selected");

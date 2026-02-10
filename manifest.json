@@ -5,7 +5,9 @@
   "description": "Spotlight-like search for your browser: search bookmarks, history, and navigate with your keyboard.",
   "permissions": [
     "bookmarks",
-    "history"
+    "history",
+    "favicon",
+    "browsingData"
   ],
   "chrome_url_overrides": {
     "newtab": "newtab.html"

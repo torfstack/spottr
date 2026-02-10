@@ -135,10 +135,24 @@ body {
 #spottr-results li {
   padding: 10px 20px;
   cursor: pointer;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  grid-template-rows: auto auto auto;
+  column-gap: 10px;
+  align-items: center;
   border-top: 1px solid var(--border);
   transition: background 0.15s ease;
+}
+
+#spottr-results li .favicon {
+  grid-row: 1 / -1;
+  width: 16px;
+  height: 16px;
+  align-self: center;
+}
+
+#spottr-results li.quick-action {
+  grid-template-columns: 1fr;
 }
 
 #spottr-results li.selected {
