@@ -7,12 +7,38 @@
     "bookmarks",
     "history",
     "favicon",
-    "browsingData"
+    "browsingData",
+    "tabs",
+    "scripting",
+    "activeTab",
+    "storage"
   ],
-  "chrome_url_overrides": {
-    "newtab": "newtab.html"
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_icon": {
+      "128": "icons/icon128.png"
+    }
   },
   "icons": {
     "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "toggle-spottr": {
+      "suggested_key": {
+        "default": "Ctrl+I",
+        "mac": "Command+I"
+      },
+      "description": "Open Spottr"
+    }
   }
 }
