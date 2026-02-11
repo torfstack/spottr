@@ -2,19 +2,22 @@
   // Prevent double-injection
   if (document.getElementById("spottr-host")) return;
 
+  // Detect if loaded directly by newtab.html (page world) with auto-open flag
+  const spottrScriptEl = typeof document !== "undefined" ? document.currentScript : null;
+
   const THEMES = ["neon-dusk", "light", "midnight"];
-  const DEFAULT_THEME = "neon-dusk";
+  const DEFAULT_THEME = "midnight";
   const THEME_ICONS = { "neon-dusk": "🌆", "light": "☀️", "midnight": "🌑" };
 
   const QUICK_ACTIONS = [
     {
-      title: "> settings",
+      title: "> Settings",
       keywords: ["settings", "options", "preferences"],
       action: () => chrome.runtime.sendMessage({ action: "open-tab", url: "chrome://settings" }),
       source: "QUICK ACTIONS",
     },
     {
-      title: "> clear",
+      title: "> Clear",
       keywords: ["clear", "cache", "history", "delete"],
       action: () => chrome.runtime.sendMessage({ action: "open-tab", url: "chrome://settings/clearBrowserData" }),
       source: "QUICK ACTIONS",
@@ -137,13 +140,20 @@
       if (!response) return;
       const quickActions = matchQuickActions(query);
       const seen = new Set();
-      const browseResults = [];
+      // Collect and de-dupe raw results from background
+      const raw = [];
       for (const item of [...(response.bookmarks || []), ...(response.history || [])]) {
-        if (!seen.has(item.url)) {
+        if (item && item.url && !seen.has(item.url)) {
           seen.add(item.url);
-          browseResults.push(item);
+          raw.push(item);
         }
       }
+      // Apply fuzzy filtering to tolerate minor typos (off-by-one incl. transposition)
+      const q = query.toLowerCase();
+      const browseResults = raw.filter((item) =>
+        fuzzyIncludes(item.title || item.url, q) || fuzzyIncludes(item.url || "", q)
+      );
+
       results = [...quickActions, ...browseResults].slice(0, 20);
       selectedIndex = results.length > 0 ? 0 : -1;
       render();
@@ -153,6 +163,63 @@
   function matchQuickActions(query) {
     const q = query.toLowerCase();
     return QUICK_ACTIONS.filter((a) => a.keywords.some((k) => k.includes(q)));
+  }
+
+  // --- Fuzzy match helpers ---
+  function fuzzyIncludes(text, q) {
+    if (!text) return false;
+    const t = (text + "").toLowerCase();
+    if (t.includes(q)) return true;
+    // Tokenize on non-alphanumeric to keep it cheap
+    const tokens = t.split(/[^a-z0-9]+/g).filter(Boolean);
+    for (const token of tokens) {
+      if (isOneEditOrTransposition(token, q)) return true;
+      // Also check substrings of the token with the same length as q (cheap sliding window)
+      if (q.length > 2 && token.length >= q.length) {
+        for (let i = 0; i <= token.length - q.length; i++) {
+          const sub = token.slice(i, i + q.length);
+          if (isOneEditOrTransposition(sub, q)) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function isOneEditOrTransposition(a, b) {
+    if (a === b) return true;
+    const la = a.length, lb = b.length;
+    if (Math.abs(la - lb) > 1) return false;
+
+    // Same length -> allow 1 substitution or 1 adjacent transposition
+    if (la === lb) {
+      let diff = 0;
+      for (let i = 0; i < la; i++) if (a[i] !== b[i]) diff++;
+      if (diff <= 1) return true; // substitution or already equal
+      // transposition: exactly 2 diffs and they are adjacent swap
+      for (let i = 0; i < la - 1; i++) {
+        if (a[i] !== b[i]) {
+          if (a[i] === b[i + 1] && a[i + 1] === b[i] && a.slice(i + 2) === b.slice(i + 2) && a.slice(0, i) === b.slice(0, i)) {
+            return true;
+          }
+          break;
+        }
+      }
+      return false;
+    }
+
+    // Length differs by 1 -> one insertion/deletion
+    let i = 0, j = 0, edits = 0;
+    while (i < la && j < lb) {
+      if (a[i] === b[j]) { i++; j++; }
+      else {
+        edits++;
+        if (edits > 1) return false;
+        if (la > lb) i++; else j++;
+      }
+    }
+    // account for trailing extra char
+    if (i < la || j < lb) edits++;
+    return edits <= 1;
   }
 
   // --- Input ---
@@ -251,10 +318,17 @@
 
   function highlightMatch(text, query) {
     if (!query) return escapeHtml(text);
-    const escaped = escapeHtml(text);
-    const escapedQuery = escapeHtml(query);
-    const regex = new RegExp(`(${escapedQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
-    return escaped.replace(regex, `<mark class="match">$1</mark>`);
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
+    let result = "";
+    let lastIndex = 0;
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      result += escapeHtml(text.slice(lastIndex, match.index));
+      result += `<mark class="match">${escapeHtml(match[1])}</mark>`;
+      lastIndex = regex.lastIndex;
+    }
+    result += escapeHtml(text.slice(lastIndex));
+    return result;
   }
 
   // --- Message listener ---
