@@ -22,13 +22,13 @@ chrome.commands.onCommand.addListener(async (command) => {
   chrome.tabs.sendMessage(tab.id, { action: "toggle-spottr" }, (response) => {
     if (chrome.runtime.lastError) {
       // Content script not yet injected, inject it first
-      chrome.scripting.executeScript({
+      chrome.scripting.insertCSS({
         target: { tabId: tab.id },
-        files: ["content.js"]
+        files: ["shared.css", "content.css"]
       }, () => {
-        chrome.scripting.insertCSS({
+        chrome.scripting.executeScript({
           target: { tabId: tab.id },
-          files: ["content.css"]
+          files: ["shared.js", "content.js"]
         }, () => {
           chrome.tabs.sendMessage(tab.id, { action: "toggle-spottr" }, () => {
             void chrome.runtime.lastError;
@@ -122,13 +122,13 @@ chrome.action.onClicked.addListener(async (tab) => {
 
   chrome.tabs.sendMessage(tab.id, { action: "toggle-spottr" }, (response) => {
     if (chrome.runtime.lastError) {
-      chrome.scripting.executeScript({
+      chrome.scripting.insertCSS({
         target: { tabId: tab.id },
-        files: ["content.js"]
+        files: ["shared.css", "content.css"]
       }, () => {
-        chrome.scripting.insertCSS({
+        chrome.scripting.executeScript({
           target: { tabId: tab.id },
-          files: ["content.css"]
+          files: ["shared.js", "content.js"]
         }, () => {
           chrome.tabs.sendMessage(tab.id, { action: "toggle-spottr" }, () => {
             void chrome.runtime.lastError;

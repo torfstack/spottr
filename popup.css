@@ -1,3 +1,5 @@
+@import url("shared.css");
+
 :root {
   /* Mirror Spottr overlay (midnight theme) */
   --dialog-bg: #1a1a1a;
@@ -20,98 +22,22 @@ body {
 
 #spottr-popup {
   padding: 12px;
-  /* Stronger blur to better separate content */
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   justify-content: center;
 }
 
-/* Input matches overlay sizing/colors */
 #spottr-input {
-  width: 100%;
   box-sizing: border-box;
-  padding: 16px 20px;
   border-radius: 12px;
-  border: none;
-  background: var(--input-bg);
-  color: var(--text);
-  outline: none;
-  font-size: 18px;
-  caret-color: var(--accent);
-  font-family: inherit;
 }
 
-#spottr-input::placeholder { color: var(--text-muted); }
-
-/* Results list mirrors overlay layout */
 #spottr-results {
-  list-style: none;
   margin: 10px 0 0 0;
   padding: 0;
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-#spottr-results li {
-  display: grid;
-  grid-template-columns: 16px 1fr;
-  grid-template-rows: auto auto auto;
-  column-gap: 10px;
-  align-items: center;
-  padding: 10px 20px;
-  border-top: 1px solid var(--border);
-  cursor: pointer;
-}
-
-/* When there's no favicon element, collapse to single column */
-#spottr-results li:not(:has(.favicon)) {
-  grid-template-columns: 1fr;
-}
-
-/* Favicon slot, hidden for quick actions */
-#spottr-results li .favicon {
-  grid-row: 1 / -1;
-  width: 16px;
-  height: 16px;
-  align-self: center;
-}
-
-/* Quick action rows use single column like overlay */
-#spottr-results li.quick-action {
-  grid-template-columns: 1fr;
-}
-
-#spottr-results li.selected,
-#spottr-results li:hover {
-  background: var(--selected-bg);
-}
-
-#spottr-results li .title {
-  font-size: 14px;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-#spottr-results li .url {
-  font-size: 12px;
-  color: var(--text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-#spottr-results li .source {
-  font-size: 10px;
-  color: var(--accent);
-  text-transform: uppercase;
-  margin-top: 2px;
 }
 
 /* Highlight consistent with overlay (midnight/neon-dusk) */
 mark.match {
-  background: none;
   color: #5ebbff;
-  font-weight: 700;
 }

@@ -28,8 +28,8 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "css": ["content.css"],
+      "js": ["shared.js", "content.js"],
+      "css": ["shared.css", "content.css"],
       "run_at": "document_idle"
     }
   ],

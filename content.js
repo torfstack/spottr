@@ -27,8 +27,7 @@
   let results = [];
   let selectedIndex = -1;
   let debounceTimer = null;
-  let lastMouseX = 0;
-  let lastMouseY = 0;
+  const lastMouse = { x: 0, y: 0, selectedIndex: -1 };
 
   // --- Build DOM ---
   const host = document.createElement("div");
@@ -127,6 +126,12 @@
 
     hide();
     chrome.runtime.sendMessage({ action: "open-tab", url: url });
+  }
+
+  // --- Item selection handler ---
+  function onSelect(item) {
+    if (item.action) { item.action(); hide(); return; }
+    navigate(item.url);
   }
 
   // --- Search ---
@@ -277,64 +282,20 @@
     const query = input.value.trim();
 
     results.forEach((item, i) => {
-      const li = document.createElement("li");
-      if (i === selectedIndex) li.classList.add("selected");
-
-      if (item.action) {
-        li.classList.add("quick-action");
-        li.innerHTML = `
-          <span class="title">${highlightMatch(item.title, query)}</span>
-          <span class="source">${item.source}</span>
-        `;
-      } else {
-        li.innerHTML = `
-          <img class="favicon" src="https://www.google.com/s2/favicons?domain=${new URL(item.url).hostname}&sz=16" alt="">
-          <span class="title">${highlightMatch(item.title, query)}</span>
-          <span class="url">${highlightMatch(item.url, query)}</span>
-          <span class="source">${item.source}</span>
-        `;
-      }
-
-      li.addEventListener("click", () => {
-        if (item.action) { item.action(); hide(); return; }
-        navigate(item.url);
+      const li = buildResultItem(item, i, query, {
+        selectedIndex,
+        lastMouse,
+        resultsList,
+        onSelect,
       });
-      li.addEventListener("mousemove", (e) => {
-        if (e.screenX === lastMouseX && e.screenY === lastMouseY) return;
-        lastMouseX = e.screenX;
-        lastMouseY = e.screenY;
-
-        selectedIndex = i;
-        resultsList.querySelector(".selected")?.classList.remove("selected");
-        li.classList.add("selected");
+      li.addEventListener("mousemove", () => {
+        selectedIndex = lastMouse.selectedIndex;
       });
-
       resultsList.appendChild(li);
     });
 
     const selected = resultsList.querySelector(".selected");
     if (selected) selected.scrollIntoView({ block: "nearest" });
-  }
-
-  function escapeHtml(str) {
-    const div = document.createElement("div");
-    div.textContent = str;
-    return div.innerHTML;
-  }
-
-  function highlightMatch(text, query) {
-    if (!query) return escapeHtml(text);
-    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi");
-    let result = "";
-    let lastIndex = 0;
-    let match;
-    while ((match = regex.exec(text)) !== null) {
-      result += escapeHtml(text.slice(lastIndex, match.index));
-      result += `<mark class="match">${escapeHtml(match[1])}</mark>`;
-      lastIndex = regex.lastIndex;
-    }
-    result += escapeHtml(text.slice(lastIndex));
-    return result;
   }
 
   // --- Message listener ---
