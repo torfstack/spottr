@@ -27,6 +27,8 @@
   let results = [];
   let selectedIndex = -1;
   let debounceTimer = null;
+  let lastMouseX = 0;
+  let lastMouseY = 0;
 
   // --- Build DOM ---
   const host = document.createElement("div");
@@ -297,7 +299,11 @@
         if (item.action) { item.action(); hide(); return; }
         navigate(item.url);
       });
-      li.addEventListener("mouseenter", () => {
+      li.addEventListener("mousemove", (e) => {
+        if (e.screenX === lastMouseX && e.screenY === lastMouseY) return;
+        lastMouseX = e.screenX;
+        lastMouseY = e.screenY;
+
         selectedIndex = i;
         resultsList.querySelector(".selected")?.classList.remove("selected");
         li.classList.add("selected");

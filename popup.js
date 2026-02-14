@@ -5,6 +5,8 @@
   let results = [];
   let selectedIndex = -1;
   let debounce = null;
+  let lastMouseX = 0;
+  let lastMouseY = 0;
 
   function escapeHtml(str) {
     const div = document.createElement("div");
@@ -48,7 +50,11 @@
         <span class="source">${item.source}</span>
       `;
       li.addEventListener("click", () => openItem(item));
-      li.addEventListener("mouseenter", () => {
+      li.addEventListener("mousemove", (e) => {
+        if (e.screenX === lastMouseX && e.screenY === lastMouseY) return;
+        lastMouseX = e.screenX;
+        lastMouseY = e.screenY;
+
         selectedIndex = i;
         resultsList.querySelector(".selected")?.classList.remove("selected");
         li.classList.add("selected");
